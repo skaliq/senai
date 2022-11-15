@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:h="http://xmlns.jcp.org/jsf/html"
+	xmlns:f="http://xmlns.jcp.org/jsf/core"
+	xmlns:p="http://primefaces.org/ui">
+<h:head>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+	<title>SGA - Sistema de Gestão de Agenda</title>
+
+	<style>
+.content {
+	max-width: 100%;
+	margin: auto;
+	padding: 10px;
+}
+</style>
+	<h:outputStylesheet name="primeicons/primeicons.css"
+		library="primefaces" />
+</h:head>
+<h:body style="background-color: #666666;">
+	<div class="content">
+		<h:form id="form">
+			<p:growl id="my-growl" showDetail="true" showSummary="true" />
+
+			<p:menubar model="#{menuBean.model}" autoDisplay="false">
+				<f:facet name="options">
+					<p:button value="Logout" icon="pi pi-fw pi-sign-out"
+						styleClass="ui-button-info" />
+				</f:facet>
+			</p:menubar>
+
+			<p:toolbar>
+				<p:toolbarGroup>
+					<p:commandButton value="Novo" icon="pi pi-plus"
+						actionListener="#{pautaBean.cadastraNovo}"
+						update=":dialogs:mantem-pauta"
+						oncomplete="PF('mantemPautaDialog').show()"
+						styleClass="ui-button-success" style="margin-right: .5rem">
+						<p:resetInput target=":dialogs:mantem-pauta" />
+					</p:commandButton>
+				</p:toolbarGroup>
+			</p:toolbar>
+
+			<p:panel>
+				<f:facet name="header">SGA - Sistema de Gestão de Agenda</f:facet>
+				<br />
+				<p:dataTable id="pauta-list" value="#{pautaBean.pautas}" var="pt"
+					border="1">
+					<f:facet name="header">Lista de registros</f:facet>
+					<p:column headerText="Assunto">#{pt.assunto}</p:column>
+					<p:column exportable="false" headerText="Ações" width="100px;">
+						<p:commandButton icon="pi pi-pencil"
+							update=":dialogs:mantem-pauta"
+							oncomplete="PF('mantemPautaDialog').show()"
+							styleClass="edit-button rounded-button ui-button-success"
+							process="@this">
+							<f:setPropertyActionListener value="#{pt}"
+								target="#{pautaBean.pautaSelecionada}" />
+							<p:resetInput target=":dialogs:mantem-pauta" />
+						</p:commandButton>
+						<p:commandButton class="ui-button-warning rounded-button"
+							icon="pi pi-trash" process="@this" update=":dialogs:apaga"
+							oncomplete="PF('apagaPautaDialog').show()">
+							<f:setPropertyActionListener value="#{pt}"
+								target="#{pautaBean.pautaSelecionada}" />
+						</p:commandButton>
+					</p:column>
+				</p:dataTable>
+			</p:panel>
+		</h:form>
+		<h:form id="dialogs">
+			<p:dialog header="Detalhes da pauta" showEffect="fade" modal="true"
+				widgetVar="mantemPautaDialog" responsive="true">
+				<p:outputPanel id="mantem-pauta" class="ui-fluid">
+					<p:outputPanel rendered="#{pautaBean.temPautaSelecionada}">
+						<div class="field">
+							<p:outputLabel for="name">Assunto</p:outputLabel>
+							<p:inputText id="name"
+								value="#{pautaBean.pautaSelecionada.assunto}" required="true" />
+						</div>
+					</p:outputPanel>
+				</p:outputPanel>
+
+				<f:facet name="footer">
+					<p:commandButton value="Salvar" icon="pi pi-check"
+						actionListener="#{pautaBean.salva}"
+						update="mantem-pauta :form:pauta-list"
+						process="mantem-pauta @this"
+						oncomplete="PF('mantemPautaDialog').hide()" />
+					<p:commandButton value="Cancela" icon="pi pi-times"
+						onclick="PF('mantemPautaDialog').hide()"
+						class="ui-button-secondary" type="button" />
+				</f:facet>
+			</p:dialog>
+
+			<p:confirmDialog widgetVar="apagaPautaDialog" showEffect="fade"
+				width="300" header="Confirmar" severity="warn" id="apaga"
+				message="Apagar o registro: #{pautaBean.pautaSelecionada.assunto}?">
+				<p:commandButton value="Sim" icon="pi pi-check"
+					actionListener="#{pautaBean.remove}" process="@this"
+					update=":form:pauta-list :form:my-growl"
+					oncomplete="PF('apagaPautaDialog').hide()" />
+				<p:commandButton value="Não" type="button"
+					styleClass="ui-button-secondary" icon="pi pi-times"
+					onclick="PF('apagaPautaDialog').hide()" />
+			</p:confirmDialog>
+
+			<p:confirmDialog global="true" showEffect="fade" width="300">
+				<p:commandButton value="Sim" type="button"
+					styleClass="ui-confirmdialog-yes" icon="pi pi-check" />
+				<p:commandButton value="Não" type="button"
+					styleClass="ui-confirmdialog-no ui-button-secondary"
+					icon="pi pi-times" />
+			</p:confirmDialog>
+		</h:form>
+	</div>
+</h:body>
+</html>

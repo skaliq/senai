@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:h="http://xmlns.jcp.org/jsf/html"
+	xmlns:f="http://xmlns.jcp.org/jsf/core"
+	xmlns:p="http://primefaces.org/ui">
+<h:head>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+	<title>SGA - Sistema de Gestão de Agenda</title>
+
+	<style>
+.content {
+	max-width: 100%;
+	margin: auto;
+	padding: 10px;
+}
+</style>
+	<h:outputStylesheet name="primeicons/primeicons.css"
+		library="primefaces" />
+</h:head>
+<h:body style="background-color: #666666;">
+	<div class="content">
+		<h:form id="form">
+			<p:growl id="my-growl" showDetail="true" showSummary="true" />
+
+			<p:menubar model="#{menuBean.model}" autoDisplay="false">
+				<f:facet name="otlfions">
+					<p:button value="Logout" icon="pi pi-fw pi-sign-out"
+						styleClass="ui-button-info" />
+				</f:facet>
+			</p:menubar>
+
+			<p:toolbar>
+				<p:toolbarGroup>
+					<p:commandButton value="Novo" icon="pi pi-plus"
+						actionListener="#{telefoneBean.cadastraNovo}"
+						update=":dialogs:mantem-telefone"
+						oncomplete="PF('mantemTelefoneDialog').show()"
+						styleClass="ui-button-success" style="margin-right: .5rem">
+						<p:resetInput target=":dialogs:mantem-telefone" />
+					</p:commandButton>
+				</p:toolbarGroup>
+			</p:toolbar>
+
+			<p:panel>
+				<f:facet name="header">SGA - Sistema de Gestão de Agenda</f:facet>
+				<br />
+				<p:dataTable id="telefone-list" value="#{telefoneBean.telefones}"
+					rows="10" paginator="true" paginatorPosition="both"
+                	paginatorTemplate="{CurrentPageReport} {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+                	currentPageReportTemplate="{startRecord}-{endRecord} of {totalRecords} records"
+                	rowsPerPageTemplate="5,10,{ShowAll|'All'}" var="tlf" border="1">
+					<f:facet name="header">Lista de registros</f:facet>
+					<p:column headerText="Pessoa">#{tlf.pessoa.nomeCompleto}</p:column>
+					<p:column headerText="Número">
+						<p:outputLabel value="(#{tlf.ddd}) #{tlf.numero}" />
+					</p:column>
+					<p:column headerText="Whats?" width="80px;" style="text-align:center;">
+						<p:selectBooleanCheckbox value="#{tlf.whats}" disabled="true" />
+					</p:column>
+					<p:column headerText="Ativo?" width="80px;" style="text-align:center;">
+						<p:selectBooleanCheckbox value="#{tlf.ativo}" disabled="true" />
+					</p:column>
+					<p:column exportable="false" headerText="Ações" width="100px;">
+						<p:commandButton icon="pi pi-pencil"
+							update=":dialogs:mantem-telefone"
+							oncomplete="PF('mantemTelefoneDialog').show()"
+							styleClass="edit-button rounded-button ui-button-success"
+							process="@this">
+							<f:setPropertyActionListener value="#{tlf}"
+								target="#{telefoneBean.telefoneSelecionado}" />
+							<p:resetInput target=":dialogs:mantem-telefone" />
+						</p:commandButton>
+						<p:commandButton class="ui-button-warning rounded-button"
+							icon="pi pi-trash" process="@this" update=":dialogs:apaga"
+							oncomplete="PF('apagaTelefoneDialog').show()">
+							<f:setPropertyActionListener value="#{tlf}"
+								target="#{telefoneBean.telefoneSelecionado}" />
+						</p:commandButton>
+					</p:column>
+				</p:dataTable>
+			</p:panel>
+		</h:form>
+		<h:form id="dialogs">
+			<p:dialog header="Detalhes da telefone" showEffect="fade" modal="true"
+				widgetVar="mantemTelefoneDialog" responsive="true">
+				<p:outputPanel id="mantem-telefone" class="ui-fluid">
+					<p:outputPanel rendered="#{telefoneBean.temTelefoneSelecionado}">
+						<div class="field">
+							<p:outputLabel for="pessoa">Pessoa</p:outputLabel>
+							<p:inputText id="pessoa"
+								value="#{telefoneBean.telefoneSelecionado.pessoa.nomeCompleto}" required="true" />
+						</div>
+						<div class="field">
+							<p:outputLabel for="ddd">DDD</p:outputLabel>
+							<p:inputText id="ddd"
+								value="#{telefoneBean.telefoneSelecionado.ddd}" required="true" />
+						</div>
+						
+						<div class="field">
+							<p:outputLabel for="numero">Número</p:outputLabel>
+							<p:inputText id="numero"
+								value="#{telefoneBean.telefoneSelecionado.numero}" required="true" />
+						</div>
+						
+						<div class="field">
+							<p:selectBooleanCheckbox id="whats" itemLabel="Whats?"
+								value="#{telefoneBean.telefoneSelecionado.whats}" />
+						</div>
+						<div class="field">
+							<p:selectBooleanCheckbox id="ativo" itemLabel="Ativo?"
+								value="#{telefoneBean.telefoneSelecionado.ativo}" />
+						</div>
+					</p:outputPanel>
+				</p:outputPanel>
+
+				<f:facet name="footer">
+					<p:commandButton value="Salvar" icon="pi pi-check"
+						actionListener="#{telefoneBean.salva}"
+						update="mantem-telefone :form:telefone-list"
+						process="mantem-telefone @this"
+						oncomplete="PF('mantemTelefoneDialog').hide()" />
+					<p:commandButton value="Cancela" icon="pi pi-times"
+						onclick="PF('mantemTelefoneDialog').hide()"
+						class="ui-button-secondary" type="button" />
+				</f:facet>
+			</p:dialog>
+
+			<p:confirmDialog widgetVar="apagaTelefoneDialog" showEffect="fade"
+				width="300" header="Confirmar" severity="warn" id="apaga"
+				message="Apagar o registro: #{telefoneBean.telefoneSelecionado.numero}?">
+				<p:commandButton value="Sim" icon="pi pi-check"
+					actionListener="#{telefoneBean.remove}" process="@this"
+					update=":form:telefone-list :form:my-growl"
+					oncomplete="PF('apagaTelefoneDialog').hide()" />
+				<p:commandButton value="Não" type="button"
+					styleClass="ui-button-secondary" icon="pi pi-times"
+					onclick="PF('apagaTelefoneDialog').hide()" />
+			</p:confirmDialog>
+
+			<p:confirmDialog global="true" showEffect="fade" width="300">
+				<p:commandButton value="Sim" type="button"
+					styleClass="ui-confirmdialog-yes" icon="pi pi-check" />
+				<p:commandButton value="Não" type="button"
+					styleClass="ui-confirmdialog-no ui-button-secondary"
+					icon="pi pi-times" />
+			</p:confirmDialog>
+		</h:form>
+	</div>
+</h:body>
+</html>

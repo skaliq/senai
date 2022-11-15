@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:h="http://xmlns.jcp.org/jsf/html"
+	xmlns:f="http://xmlns.jcp.org/jsf/core"
+	xmlns:p="http://primefaces.org/ui">
+<h:head>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+	<title>SGA - Sistema de Gestão de Agenda - página inicial</title>
+
+	<style>
+.content {
+	max-width: 100%;
+	margin: auto;
+	padding: 10px;
+}
+</style>
+	<h:outputStylesheet name="primeicons/primeicons.css"
+		library="primefaces" />
+</h:head>
+<h:body style="background-color: #666666;">
+	<div class="content">
+		<h:form id="form">
+			<p:growl id="my-growl" showDetail="true" showSummary="true" />
+			<p:menubar model="#{menuBean.model}" autoDisplay="false">
+				<f:facet name="options">
+					<p:button value="Bem-vindo, #{userLoginBean.login.pessoa.nomeCompleto}"
+						icon="pi pi-fw" styleClass="ui-button-info" />
+					<p:button value="Logout" icon="pi pi-fw pi-sign-out"
+						styleClass="ui-button-info" />
+				</f:facet>
+			</p:menubar>
+		</h:form>
+	</div>
+</h:body>
+</html>

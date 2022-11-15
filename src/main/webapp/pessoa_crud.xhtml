@@ -1,0 +1,292 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:h="http://xmlns.jcp.org/jsf/html"
+	xmlns:f="http://xmlns.jcp.org/jsf/core"
+	xmlns:p="http://primefaces.org/ui">
+<h:head>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+	<title>SGA - Sistema de Gestão de Agenda</title>
+
+	<style>
+		.content {
+			max-width: 100%;
+			margin: auto;
+			padding: 10px;
+		}
+		.ui-menuitem-icon {
+			margin-right: 5px !important;
+		}
+		.ui-submenuitem-icon {
+			margin-right: 5px !important;
+		}
+	</style>
+	<h:outputStylesheet name="primeicons/primeicons.css" library="primefaces" />
+</h:head>
+<h:body style="background-color: #efefef;">
+	<div class="content">
+		<h:form id="form">
+			<!-- Elemento responsável pela exibição das mensagens -->
+			<p:growl id="msgs" showDetail="true" showSummary="true" />
+			
+			<!-- Barra de menu. Fica na parte superior da página -->
+			<p:menubar model="#{menuBean.model}" autoDisplay="false">
+				<f:facet name="options">
+					<p:button value="Logout" icon="pi pi-fw pi-sign-out" styleClass="ui-button-info" />
+				</f:facet>
+			</p:menubar>
+			
+			<br /><br />
+			
+			<!-- Botão para cadastrar novo registro. No caso desta página, um registro de Pessoa -->
+			<p:toolbar>
+				<p:toolbarGroup>
+					<p:commandButton value="Novo" icon="pi pi-plus"
+						actionListener="#{pessoaCrudBean.cadastraNovo}"
+						update=":dialogs:mantem-pessoa"
+						oncomplete="PF('mantemPessoaDialog').show()"
+						styleClass="ui-button-success" style="margin-right: .5rem">
+						<p:resetInput target=":dialogs:mantem-pessoa" />
+					</p:commandButton>
+				</p:toolbarGroup>
+			</p:toolbar>
+
+			<br /><br />
+			
+			<!-- Elemento para pesquisa por Pessoa. É um acutocomplete que exibe opções a partir de 3 caracteres digitados. -->
+			<p:panel>
+				<f:facet name="header">Pesquisa</f:facet>
+				<p:outputLabel value="Nome completo: " for="pesqNome"/>
+	            <p:autoComplete id="pesqNome" minQueryLength="3" size="30"
+	            	value="#{pessoaCrudBean.backing.idPessoaPesq}"
+	            	placeholder="Digite as primeiras 3 letras do nome"
+	            	completeMethod="#{pessoaCrudBean.completeText}"
+	            	var="pes" itemLabel="#{pes.nomeCompleto}" itemValue="#{pes.id}"
+	            	effect="fade" scrollHeight="250">
+
+	            	<p:ajax event="itemSelect" update="pessoa-list" listener="#{pessoaCrudBean.onItemSelect}" />
+	            </p:autoComplete>
+	            
+	            <p:outputLabel for="@next" value="Unidade: " />
+	            <p:selectOneMenu id="pesqUnidade" value="#{pessoaCrudBean.backing.idUnidade}">
+	            	<f:selectItem itemLabel="Selecione..." itemValue="" />
+					<f:selectItems value="#{pessoaCrudBean.backing.unidades}" var="unid"
+						itemLabel="#{unid.nome}" itemValue="#{unid.id}" />
+					
+					<p:ajax event="itemSelect" update="pessoa-list" listener="#{pessoaCrudBean.onUnidadeItemSelect}" />
+	            </p:selectOneMenu>
+	            
+	            <p:outputLabel for="@next" value="Função: " />
+	            <p:selectOneMenu id="pesqFuncao" value="#{pessoaCrudBean.backing.idFuncao}">
+	            	<f:selectItem itemLabel="Selecione..." itemValue="" />
+					<f:selectItems value="#{pessoaCrudBean.backing.funcoes}" var="func"
+						itemLabel="#{func.nome}" itemValue="#{func.id}" />
+					
+					<p:ajax event="itemSelect" update="pessoa-list" listener="#{pessoaCrudBean.onFuncaoItemSelect}" />
+	            </p:selectOneMenu>
+	            
+	            <!-- Trás todos os registros de Pessoa da base, desde que não constem como deletados -->
+	            <p:commandButton class="ui-button-warning rounded-button"
+	            	actionListener="#{pessoaCrudBean.getAll}"
+					icon="pi pi-search" process="@this" update="pessoa-list">Todos: </p:commandButton>
+				
+				<!-- Limpa a tabela que exibe os registros -->
+				<p:commandButton class="ui-button-warning rounded-button"
+	            	actionListener="#{pessoaCrudBean.limpa}"
+					icon="pi pi-trash" process="@this" update="pessoa-list">Limpa: </p:commandButton>
+			</p:panel>
+			
+			<br />
+			<!-- Lista de registros -->
+			<p:dataTable id="pessoa-list" value="#{pessoaCrudBean.pessoas}" var="p"
+				rows="10" paginator="true" paginatorPosition="both"
+                paginatorTemplate="{CurrentPageReport} {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+                currentPageReportTemplate="{startRecord}-{endRecord} of {totalRecords} records"
+                rowsPerPageTemplate="5,10,{ShowAll|'All'}" border="1" sortMode="single" editable="true">
+
+				<f:facet name="header">Lista de registros</f:facet>
+
+				<!-- Permite a edição em linha de um registro -->
+				<p:ajax event="rowEdit" listener="#{pessoaCrudBean.onRowEdit}" update=":form:msgs" />
+				<p:ajax event="rowEditCancel" listener="#{pessoaCrudBean.onRowCancel}" update=":form:msgs" />
+
+				<p:column headerText="Nome completo" sortBy="#{p.nomeCompleto}">
+					<p:cellEditor>
+						<f:facet name="output">
+							<h:outputText value="#{p.nomeCompleto}" />
+						</f:facet>
+						<f:facet name="input">
+							<p:inputText id="nomeCompletoInput" value="#{p.nomeCompleto}" />
+						</f:facet>
+					</p:cellEditor>
+				</p:column>
+				<p:column headerText="E-mail">#{p.email}</p:column>
+				
+				<p:column headerText="Telefones">
+					<p:dataTable id="pessoa-telefones-list" value="#{p.telefones}" var="fone">
+						<p:column>(#{fone.ddd}) #{fone.numero}</p:column>
+					</p:dataTable>
+				</p:column>
+				
+				<p:column headerText="Função" width="150px;" sortBy="#{p.funcao.nome}">
+					<p:cellEditor>
+						<f:facet name="output">
+							<h:outputText value="#{p.funcao.nome}" />
+						</f:facet>
+						<f:facet name="input">
+							<p:selectOneMenu id="funcaoInput" value="#{pessoaCrudBean.backing.idFuncao}"
+								layout="responsive" required="true">
+								<f:selectItem itemLabel="Selecione..." itemValue="" />
+								<f:selectItems value="#{pessoaCrudBean.backing.funcoes}" var="funcao"
+									itemLabel="#{funcao.nome}" itemValue="#{funcao.id}" />
+							</p:selectOneMenu>
+						</f:facet>
+					</p:cellEditor>
+				</p:column>
+				<p:column headerText="Casa" width="150px;" sortBy="#{p.casa}">
+					<p:cellEditor>
+						<f:facet name="output">
+							<h:outputText value="#{p.casa}" />
+						</f:facet>
+						<f:facet name="input">
+							<p:selectOneMenu id="casaInput" value="#{pessoaCrudBean.backing.casa}"
+								layout="responsive" required="true">
+								<f:selectItem itemLabel="Selecione..." itemValue="" />
+								<f:selectItems value="#{pessoaCrudBean.backing.casas}" var="casa"
+									itemLabel="#{casa}" itemValue="#{casa}" />
+							</p:selectOneMenu>
+						</f:facet>
+					</p:cellEditor>
+				</p:column>
+				<p:column headerText="Unidade" width="150px;" sortBy="#{p.unidade.nome}">
+					<p:cellEditor>
+						<f:facet name="output">
+							<h:outputText value="#{p.unidade.nome}" />
+						</f:facet>
+						<f:facet name="input">
+							<p:selectOneMenu id="unidadeInput" value="#{pessoaCrudBean.backing.idUnidade}"
+								layout="responsive" required="true">
+								<f:selectItem itemLabel="Selecione..." itemValue="" />
+								<f:selectItems value="#{pessoaCrudBean.backing.unidades}" var="unidade"
+									itemLabel="#{unidade.nome}" itemValue="#{unidade.id}" />
+							</p:selectOneMenu>
+						</f:facet>
+					</p:cellEditor>
+				</p:column>
+				<p:column exportable="false" headerText="Editar" width="60px;">
+					<p:rowEditor editTitle="Editar" cancelTitle="Calcelar" saveTitle="Salvar" />
+				</p:column>
+				<p:column exportable="false" headerText="Apagar" width="60px">
+					<p:commandButton class="ui-button-warning rounded-button"
+						icon="pi pi-trash" process="@this" update=":dialogs:apaga"
+						oncomplete="PF('apagaPessoaDialog').show()">
+						<f:setPropertyActionListener value="#{p.id}"
+							target="#{pessoaCrudBean.idPessoaSelecionada}" />
+					</p:commandButton>
+				</p:column>
+			</p:dataTable>
+		</h:form>
+		
+		<!-- Form com as caixas de diálogo da página: novo registro e apagar registro -->
+		<h:form id="dialogs">
+			<p:dialog header="Cadastrar uma Pessoa" showEffect="fade" modal="true"
+				widgetVar="mantemPessoaDialog" responsive="true">
+				<p:outputPanel id="mantem-pessoa" class="ui-fluid">
+					<p:outputPanel rendered="#{pessoaCrudBean.temPessoaSelecionada}">
+						<div class="field">
+							<p:outputLabel for="name">Nome completo</p:outputLabel>
+							<p:inputText id="name" required="true"
+								requiredMessage="O campo 'Nome completo' é obrigatório"
+								value="#{pessoaCrudBean.pessoaSelecionada.nomeCompleto}"  />
+						</div>
+						<div class="field">
+							<p:outputLabel for="email">Email</p:outputLabel>
+							<p:inputText id="email" required="true"
+								requiredMessage="O campo 'Email' é obrigatório"
+								value="#{pessoaCrudBean.pessoaSelecionada.email}" />
+						</div>
+						<div class="field">
+							<p:outputLabel for="funcao">Função</p:outputLabel>
+							<p:selectOneMenu id="funcao" value="#{pessoaCrudBean.backing.idFuncao}"
+								layout="responsive" required="true" requiredMessage="O campo 'Função' é obrigatório">
+								<f:selectItem itemLabel="Selecione..." itemValue="" />
+								<f:selectItems value="#{pessoaCrudBean.backing.funcoes}" var="funcao"
+									itemLabel="#{funcao.nome}" itemValue="#{funcao.id}" />
+							</p:selectOneMenu>
+						</div>
+						<div class="field">
+							<p:outputLabel for="casa">Casa</p:outputLabel>
+							<p:selectOneMenu id="casa" value="#{pessoaCrudBean.backing.casa}"
+								layout="responsive" required="true" requiredMessage="O campo 'Casa' é obrigatório">
+								<f:selectItem itemLabel="Selecione..." itemValue="" />
+								<f:selectItems value="#{pessoaCrudBean.backing.casas}" var="casa"
+									itemLabel="#{casa}" itemValue="#{casa}" />
+							</p:selectOneMenu>
+						</div>
+						<div class="field">
+							<p:outputLabel for="unidade">Unidade</p:outputLabel>
+							<p:selectOneMenu id="unidade" value="#{pessoaCrudBean.backing.idUnidade}"
+								layout="responsive" required="true" requiredMessage="O campo 'Unidade' é obrigatório">
+								<f:selectItem itemLabel="Selecione..." itemValue="" />
+								<f:selectItems value="#{pessoaCrudBean.backing.unidades}" var="unidade"
+									itemLabel="#{unidade.nome}" itemValue="#{unidade.id}" />
+							</p:selectOneMenu>
+						</div>
+						<div class="field">
+							<p:outputLabel for="fone" value="Telefones" />
+							<p:panelGrid id="fone" columns="2">
+								
+								<p:outputLabel value="Telefone 1" for="@next" />
+								<p:panelGrid columns="5">
+									<p:outputLabel for="@next" value="DDD: " />
+									<p:inputText value="#{pessoaCrudBean.backing.telefone1.ddd}" maxlength="2" size="5" />
+									<p:outputLabel value="Número: " for="@next" />
+									<p:inputText value="#{pessoaCrudBean.backing.telefone1.numero}" maxlength="9" size="10" />
+									<p:selectBooleanCheckbox value="#{pessoaCrudBean.backing.telefone1.whats}">
+										Whats? </p:selectBooleanCheckbox>
+								</p:panelGrid>
+								
+								<p:outputLabel value="Telefone 2" for="@next" />
+								<p:panelGrid columns="5">
+									<p:outputLabel for="@next" value="DDD: " />
+									<p:inputText value="#{pessoaCrudBean.backing.telefone2.ddd}" maxlength="2" size="5" />
+									<p:outputLabel value="Número: " for="@next" />
+									<p:inputText value="#{pessoaCrudBean.backing.telefone2.numero}" maxlength="9" size="10" />
+									<p:selectBooleanCheckbox value="#{pessoaCrudBean.backing.telefone2.whats}">
+										Whats?</p:selectBooleanCheckbox>
+								</p:panelGrid>
+							</p:panelGrid>
+						</div>
+					</p:outputPanel>
+				</p:outputPanel>
+
+				<!-- Botões de salvar e cancelar para o cadastro de uma Pessoa -->
+				<f:facet name="footer">
+					<p:commandButton value="Salvar" icon="pi pi-check"
+						actionListener="#{pessoaCrudBean.salva}"
+						update="mantem-pessoa :form:pessoa-list :form:msgs"
+						process="mantem-pessoa @this"
+						oncomplete="PF('mantemPessoaDialog').hide()" />
+					<p:commandButton value="Cancela" icon="pi pi-times"
+						onclick="PF('mantemPessoaDialog').hide()"
+						class="ui-button-secondary" type="button" />
+				</f:facet>
+			</p:dialog>
+
+			<!-- Caixa de diálogo para perguntar se quer realmente exlcuir o registro -->
+			<p:confirmDialog widgetVar="apagaPessoaDialog" showEffect="fade"
+				width="300" header="Confirmar" severity="warn" id="apaga"
+				message="Apagar o registro: #{pessoaCrudBean.pessoaSelecionada.nomeCompleto}?">
+				<p:commandButton value="Sim" icon="pi pi-check"
+					actionListener="#{pessoaCrudBean.remove}" process="@this"
+					update=":form:pessoa-list"
+					oncomplete="PF('apagaPessoaDialog').hide()" />
+				<p:commandButton value="Não" type="button"
+					styleClass="ui-button-secondary" icon="pi pi-times"
+					onclick="PF('apagaPessoaDialog').hide()" />
+			</p:confirmDialog>
+		</h:form>
+
+	</div>
+</h:body>
+</html>
